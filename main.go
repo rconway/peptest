@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -32,10 +34,8 @@ func main() {
 			}
 
 			fmt.Fprintf(w, "this is /auth\n")
-			// for k, v := range r.URL.Query() {
-			// 	fmt.Fprintf(w, "  %v = %v\n", k, v[0])
-			// }
 			dumpRequest(w, r)
+			dumpRequest(os.Stdout, r)
 		})
 	}
 
@@ -45,11 +45,15 @@ func main() {
 		router.PathPrefix("/resource").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "this is /resource\n")
 			dumpRequest(w, r)
+			dumpRequest(os.Stdout, r)
 		})
 	}
 
+	// root
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "this is root path\n")
+		dumpRequest(w, r)
+		dumpRequest(os.Stdout, r)
 	})
 
 	addr := fmt.Sprintf(":%v", *port)
@@ -57,7 +61,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(addr, router))
 }
 
-func dumpRequest(w http.ResponseWriter, r *http.Request) {
+func dumpRequest(w io.Writer, r *http.Request) {
 	// Host
 	fmt.Fprintln(w, "Host:", r.Host)
 	// URL
