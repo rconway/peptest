@@ -10,7 +10,7 @@
       "request": "launch",
       "mode": "auto",
       "program": "${fileDirname}",
-      "args": [ "-auth", "-port", "8000" ]
+      "args": [ "-auth", "-port", "8080" ]
     },
     {
       "name": "resource mode",
@@ -18,7 +18,7 @@
       "request": "launch",
       "mode": "auto",
       "program": "${fileDirname}",
-      "args": [ "-resource", "-port", "9000" ]
+      "args": [ "-resource", "-port", "9090" ]
     },
     {
       "name": "full mode",
