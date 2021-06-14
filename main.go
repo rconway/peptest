@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -25,17 +26,35 @@ func main() {
 	if *authMode {
 		fmt.Println("auth mode enabled")
 		router.PathPrefix("/auth").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			outcome, haveOutcome := r.URL.Query()["outcome"]
+			defer func() {
+				fmt.Fprintf(w, "this is /auth\n")
+				dumpRequest(w, r)
+				dumpRequest(os.Stdout, r)
+			}()
+
+			origUriStr := r.Header.Get("X-Original-Uri")
+			if len(origUriStr) == 0 {
+				fmt.Println("ERROR: cannot get origUri")
+				return
+			}
+
+			origUri, err := url.Parse(origUriStr)
+			if err != nil {
+				fmt.Printf("ERROR: Cannot parse origUriStr = %v\n", origUriStr)
+				return
+			}
+
+			fmt.Printf("Query = %v\n", origUri.Query())
+			outcome, haveOutcome := origUri.Query()["outcome"]
 			if haveOutcome {
 				code, err := strconv.Atoi(outcome[0])
 				if err == nil {
+					if code >= 400 && code < 500 {
+						w.Header().Set("WWW-Authenticate", "use this ticket: xxx")
+					}
 					w.WriteHeader(code)
 				}
 			}
-
-			fmt.Fprintf(w, "this is /auth\n")
-			dumpRequest(w, r)
-			dumpRequest(os.Stdout, r)
 		})
 	}
 
