@@ -15,71 +15,92 @@ import (
 )
 
 func main() {
-	authMode := flag.Bool("auth", false, "use auth mode")
-	resourceMode := flag.Bool("resource", false, "use resource mode")
-	port := flag.Int("port", 8080, "port to listen on")
+	// Flags
+	var authMode bool
+	var resourceMode bool
+	var port int
+	flag.BoolVar(&authMode, "auth", false, "use auth mode")
+	flag.BoolVar(&resourceMode, "resource", false, "use resource mode")
+	flag.IntVar(&port, "port", 8080, "port to listen on")
 	flag.Parse()
 
 	router := mux.NewRouter()
 
 	// auth mode
-	if *authMode {
+	if authMode {
 		fmt.Println("auth mode enabled")
-		router.PathPrefix("/auth").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer func() {
-				fmt.Fprintf(w, "this is /auth\n")
-				dumpRequest(w, r)
-				dumpRequest(os.Stdout, r)
-			}()
-
-			origUriStr := r.Header.Get("X-Original-Uri")
-			if len(origUriStr) == 0 {
-				fmt.Println("ERROR: cannot get origUri")
-				return
-			}
-
-			origUri, err := url.Parse(origUriStr)
-			if err != nil {
-				fmt.Printf("ERROR: Cannot parse origUriStr = %v\n", origUriStr)
-				return
-			}
-
-			fmt.Printf("Query = %v\n", origUri.Query())
-			outcome, haveOutcome := origUri.Query()["outcome"]
-			if haveOutcome {
-				code, err := strconv.Atoi(outcome[0])
-				if err == nil {
-					if code >= 400 && code < 500 {
-						w.Header().Set("WWW-Authenticate", "use this ticket: xxx")
-					}
-					w.WriteHeader(code)
-				}
-			}
-		})
+		router.PathPrefix("/auth").HandlerFunc(authHandler)
 	}
 
 	// resource mode
-	if *resourceMode {
+	if resourceMode {
 		fmt.Println("resource mode enabled")
-		router.PathPrefix("/resource").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "this is /resource\n")
-			dumpRequest(w, r)
-			dumpRequest(os.Stdout, r)
-		})
+		router.PathPrefix("/resource").HandlerFunc(resourceHandler)
 	}
 
 	// root
-	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "this is root path\n")
-		dumpRequest(w, r)
-		dumpRequest(os.Stdout, r)
-	})
+	router.PathPrefix("/").HandlerFunc(rootHandler)
 
-	addr := fmt.Sprintf(":%v", *port)
+	// Start server
+	addr := fmt.Sprintf(":%v", port)
 	fmt.Printf("Starting to listen at %v\n", addr)
 	log.Fatal(http.ListenAndServe(addr, router))
 }
 
+// Handler for root path
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "this is root path\n")
+	dumpRequest(w, r)
+	dumpRequest(os.Stdout, r)
+}
+
+// Handler to provide the 'auth' response
+func authHandler(w http.ResponseWriter, r *http.Request) {
+	// Response body - deferred to end of function
+	defer func() {
+		fmt.Fprintf(w, "this is /auth\n")
+		dumpRequest(w, r)
+		dumpRequest(os.Stdout, r)
+	}()
+
+	// Get the original URI requested, upon which the decision is to be made
+	origUriStr := r.Header.Get("X-Original-Uri")
+	if len(origUriStr) == 0 {
+		fmt.Println("ERROR: cannot get origUri")
+		return
+	}
+
+	// Parse the URI string to a URL structure
+	origUri, err := url.Parse(origUriStr)
+	if err != nil {
+		fmt.Printf("ERROR: Cannot parse origUriStr = %v\n", origUriStr)
+		return
+	}
+
+	// Get the required 'outcome' from the original request
+	fmt.Printf("Query = %v\n", origUri.Query())
+	outcome, haveOutcome := origUri.Query()["outcome"]
+	if haveOutcome {
+		code, err := strconv.Atoi(outcome[0])
+		if err == nil {
+			// If the code is 401 (Unauthorized) then return the expected header key
+			// nginx will pass this back through to the client
+			if code == 401 {
+				w.Header().Set("WWW-Authenticate", "use this ticket: xxx")
+			}
+			w.WriteHeader(code)
+		}
+	}
+}
+
+// Handler for the 'protected' resource
+func resourceHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "this is /resource\n")
+	dumpRequest(w, r)
+	dumpRequest(os.Stdout, r)
+}
+
+// Helper function to dump the received request to stdout
 func dumpRequest(w io.Writer, r *http.Request) {
 	// Host
 	fmt.Fprintln(w, "Host:", r.Host)
