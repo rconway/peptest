@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  server1:
+    image: nginx
+    networks:
+      - peptest
+  server2:
+    image: nginx
+    networks:
+      - peptest
+
+networks:
+  peptest:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.234.0/24
+          # gateway: 192.168.234.1
