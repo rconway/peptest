@@ -7,9 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -26,16 +25,13 @@ func main() {
 
 	router := mux.NewRouter()
 
+	// select handler based upon the indicated mode
 	var handler http.HandlerFunc
-
-	// auth mode
 	if authMode {
 		fmt.Println("auth mode enabled")
-		// router.PathPrefix("/auth").HandlerFunc(authHandler)
 		handler = authHandler
 	} else if resourceMode {
 		fmt.Println("resource mode enabled")
-		// router.PathPrefix("/resource").HandlerFunc(resourceHandler)
 		handler = resourceHandler
 	} else {
 		log.Fatal(fmt.Errorf("must specify one of -auth or -resource"))
@@ -50,57 +46,52 @@ func main() {
 	log.Fatal(http.ListenAndServe(addr, router))
 }
 
-// Handler for root path
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "this is root path\n")
-	dumpRequest(w, r)
-	dumpRequest(os.Stdout, r)
-}
-
 // Handler to provide the 'auth' response
 func authHandler(w http.ResponseWriter, r *http.Request) {
 	// Response body - deferred to end of function
 	defer func() {
-		fmt.Fprintf(w, "this is /auth\n")
+		fmt.Fprintf(w, "Endpoint = Auth Handler\n")
 		dumpRequest(w, r)
 		dumpRequest(os.Stdout, r)
 	}()
 
-	// Get the original URI requested, upon which the decision is to be made
-	origUriStr := r.Header.Get("X-Original-Uri")
-	if len(origUriStr) == 0 {
-		fmt.Println("ERROR: cannot get origUri")
-		w.WriteHeader(http.StatusBadRequest)
+	// Get the Authorization header
+	authorizationStr := r.Header.Get("Authorization")
+
+	// FORBIDDEN - if there is no Authorization header then treat as FORBIDDEN
+	if len(authorizationStr) == 0 {
+		fmt.Println("FORBIDDEN: no Authorization header")
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
-	// Parse the URI string to a URL structure
-	origUri, err := url.Parse(origUriStr)
-	if err != nil {
-		fmt.Printf("ERROR: Cannot parse origUriStr = %v\n", origUriStr)
-		w.WriteHeader(http.StatusBadRequest)
+	// Get the Bearer token from the Authorization header
+	authParts := strings.Split(authorizationStr, " ")
+
+	// FORBIDDEN - if there is no Bearer token
+	if len(authParts) != 2 || authParts[0] != "Bearer" {
+		fmt.Println("FORBIDDEN: no Bearer token")
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
-	// Get the required 'outcome' from the original request
-	fmt.Printf("Query = %v\n", origUri.Query())
-	outcome, haveOutcome := origUri.Query()["outcome"]
-	if haveOutcome {
-		code, err := strconv.Atoi(outcome[0])
-		if err == nil {
-			// If the code is 401 (Unauthorized) then return the expected header key
-			// nginx will pass this back through to the client
-			if code == 401 {
-				w.Header().Set("WWW-Authenticate", "use this ticket: xxx")
-			}
-			w.WriteHeader(code)
-		}
+	// UNAUTHORIZED - if the token is not 'good'
+	// Also set the 'WWW-Authenticate' header
+	if authParts[1] != "good" {
+		fmt.Println("UNAUTHORIZED: the token is BAD")
+		w.Header().Set("WWW-Authenticate", "use this ticket: xxx")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
+
+	// AUTHORIZED - if all checks pass
+	fmt.Println("AUTHORIZED: the token is GOOD")
+	w.WriteHeader(http.StatusOK)
 }
 
 // Handler for the 'protected' resource
 func resourceHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "this is /resource\n")
+	fmt.Fprintf(w, "Endpoint = Resource Server\n")
 	dumpRequest(w, r)
 	dumpRequest(os.Stdout, r)
 }
