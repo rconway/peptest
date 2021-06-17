@@ -21,7 +21,7 @@ func main() {
 	var port int
 	flag.BoolVar(&authMode, "auth", false, "use auth mode")
 	flag.BoolVar(&resourceMode, "resource", false, "use resource mode")
-	flag.IntVar(&port, "port", 8080, "port to listen on")
+	flag.IntVar(&port, "port", 80, "port to listen on")
 	flag.Parse()
 
 	router := mux.NewRouter()
@@ -67,6 +67,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	origUriStr := r.Header.Get("X-Original-Uri")
 	if len(origUriStr) == 0 {
 		fmt.Println("ERROR: cannot get origUri")
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -74,6 +75,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	origUri, err := url.Parse(origUriStr)
 	if err != nil {
 		fmt.Printf("ERROR: Cannot parse origUriStr = %v\n", origUriStr)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 

@@ -1,12 +1,26 @@
 version: "3"
 
 services:
-  server1:
+  # PROXY running in nginx
+  nginx:
     image: nginx
     networks:
       - peptest
-  server2:
-    image: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  # PEP: running app `peptest -auth`
+  pep:
+    build: ./app
+    image: $USER/peptest
+    command: ["-auth"]
+    networks:
+      - peptest
+  # ADES: running app `peptest -resource`
+  ades:
+    image: $USER/peptest
+    depends_on:
+      - pep
+    command: ["-resource"]
     networks:
       - peptest
 
@@ -16,4 +30,3 @@ networks:
     ipam:
       config:
         - subnet: 192.168.234.0/24
-          # gateway: 192.168.234.1
