@@ -26,20 +26,23 @@ func main() {
 
 	router := mux.NewRouter()
 
+	var handler http.HandlerFunc
+
 	// auth mode
 	if authMode {
 		fmt.Println("auth mode enabled")
-		router.PathPrefix("/auth").HandlerFunc(authHandler)
-	}
-
-	// resource mode
-	if resourceMode {
+		// router.PathPrefix("/auth").HandlerFunc(authHandler)
+		handler = authHandler
+	} else if resourceMode {
 		fmt.Println("resource mode enabled")
-		router.PathPrefix("/resource").HandlerFunc(resourceHandler)
+		// router.PathPrefix("/resource").HandlerFunc(resourceHandler)
+		handler = resourceHandler
+	} else {
+		log.Fatal(fmt.Errorf("must specify one of -auth or -resource"))
 	}
 
 	// root
-	router.PathPrefix("/").HandlerFunc(rootHandler)
+	router.PathPrefix("/").HandlerFunc(handler)
 
 	// Start server
 	addr := fmt.Sprintf(":%v", port)
