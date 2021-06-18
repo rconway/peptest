@@ -9,7 +9,8 @@ The scenario is simulated through the following endpoints that are instantiated 
 * **nginx**<br>
   Nginx instance configured through this [nginx.conf](nginx/nginx.conf), exposed to the host on port 80
 * **pep**<br>
-  Instance of test program `peptest` in mode `'-auth'`, which provides the `auth_request` endpoint and mocks the PEP logic
+  Instance of test program `peptest` in mode `'-auth'`, which provides the `auth_request` endpoint and mocks the PEP logic.<br>
+  **_To aid testing, the PEP uses the integer value of the Bearer token to determine the result of the authorization decision, i.e. the http status code to be returned._**
 * **ades**<br>
   Instance of test program `peptest` in mode `'-resource'`, which provides the Resource Server endpoint and mocks the ADES
 
