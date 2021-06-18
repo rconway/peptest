@@ -1,0 +1,55 @@
+@startuml
+title Nginx auth_request
+
+hide stereotype
+
+skinparam participant<<client>> {
+  BackgroundColor LightGreen
+  BorderColor Green
+}
+skinparam participant<<nginx>> {
+  BackgroundColor Yellow
+  BorderColor DarkOrange
+}
+skinparam participant<<pep>> {
+  BackgroundColor Pink
+  BorderColor Red
+}
+skinparam participant<<ades>> {
+  BackgroundColor Cyan
+  BorderColor Blue
+}
+
+participant "Client" as client<<client>> order 10
+participant "Nginx" as nginx<<nginx>> order 20
+participant "PEP" as pep<<pep>> order 30
+participant "ADES" as ades<<ades>> order 40
+
+autonumber
+client -> nginx : request resource (Bearer)
+nginx -> pep : auth_request(Bearer, X-Original-Uri)
+pep -> pep : makes checks
+
+alt AUTHORIZED
+  nginx <-- pep : decision : 200
+  nginx -> ades : request resource (Bearer)
+  note left: PEP has not modified the ongoing requests\ni.e. to pass a PEP-generated JWT
+  client <-- ades : requested resource
+end
+
+alt UNAUTHORIZED
+  nginx <-- pep : decision : 401, Www-Authenticate=ticket
+  client <-- nginx : unauthorized : 401, Www-Authenticate=ticket
+end
+
+alt FORBIDDEN
+  nginx <-- pep : decision : 403
+  client <-- nginx : forbidden : 403
+end
+
+alt BAD PEP
+  nginx <-- pep : decision : not 200-299/401/403
+  client <-- nginx : internal server error : 500
+end
+
+@enduml
