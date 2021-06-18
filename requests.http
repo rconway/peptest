@@ -1,0 +1,23 @@
+
+###
+
+# AUTHORIZED
+GET /ades HTTP/1.1
+Host: localhost
+Authorization: Bearer 200
+
+###
+
+# UNAUTHORIZED
+GET /ades HTTP/1.1
+Host: localhost
+Authorization: Bearer 401
+
+###
+
+# FORBIDDEN
+GET /ades HTTP/1.1
+Host: localhost
+Authorization: Bearer 403
+
+###
