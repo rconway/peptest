@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -48,8 +49,12 @@ func main() {
 
 // Handler to provide the 'auth' response
 func authHandler(w http.ResponseWriter, r *http.Request) {
-	// Response body - deferred to end of function
+	var statusCode int
+
+	// Response - deferred to end of function
 	defer func() {
+		w.Header().Set("WWW-Authenticate", "use this ticket: 123ABC")
+		w.WriteHeader(statusCode)
 		fmt.Fprintf(w, "Endpoint = Auth Handler\n")
 		dumpRequest(w, r)
 		dumpRequest(os.Stdout, r)
@@ -58,35 +63,35 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the Authorization header
 	authorizationStr := r.Header.Get("Authorization")
 
-	// FORBIDDEN - if there is no Authorization header then treat as FORBIDDEN
+	// UNAUTHORIZED - if there is no Authorization header then treat as UNAUTHORIZED
 	if len(authorizationStr) == 0 {
-		fmt.Println("FORBIDDEN: no Authorization header")
-		w.WriteHeader(http.StatusForbidden)
+		fmt.Println("UNAUTHORIZED: no Authorization header")
+		statusCode = http.StatusUnauthorized
 		return
 	}
 
 	// Get the Bearer token from the Authorization header
 	authParts := strings.Split(authorizationStr, " ")
 
-	// FORBIDDEN - if there is no Bearer token
+	// UNAUTHORIZED - if there is no Bearer token
 	if len(authParts) != 2 || authParts[0] != "Bearer" {
-		fmt.Println("FORBIDDEN: no Bearer token")
-		w.WriteHeader(http.StatusForbidden)
+		fmt.Println("UNAUTHORIZED: no Bearer token")
+		statusCode = http.StatusUnauthorized
 		return
 	}
 
-	// UNAUTHORIZED - if the token is not 'good'
-	// Also set the 'WWW-Authenticate' header
-	if authParts[1] != "good" {
-		fmt.Println("UNAUTHORIZED: the token is BAD")
-		w.Header().Set("WWW-Authenticate", "use this ticket: xxx")
-		w.WriteHeader(http.StatusUnauthorized)
+	// Get the value of the token as an int
+	requestedCode, err := strconv.Atoi(authParts[1])
+
+	// UNAUTHORIZED - if the Bearer token value is not an int
+	if err != nil {
+		fmt.Println("UNAUTHORIZED: non-integer Bearer token")
+		statusCode = http.StatusUnauthorized
 		return
 	}
 
-	// AUTHORIZED - if all checks pass
-	fmt.Println("AUTHORIZED: the token is GOOD")
-	w.WriteHeader(http.StatusOK)
+	// All checks pass - use the provided status code
+	statusCode = requestedCode
 }
 
 // Handler for the 'protected' resource
