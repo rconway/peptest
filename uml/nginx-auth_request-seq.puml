@@ -27,7 +27,7 @@ participant "ADES" as ades<<ades>> order 40
 
 autonumber
 client -> nginx : request resource (Bearer)
-nginx -> pep : auth_request(Bearer, X-Original-Uri)
+nginx -> pep : auth_request\n(Bearer, X-Original-Uri, X-Original-Method)
 pep -> pep : makes checks
 
 alt AUTHORIZED
