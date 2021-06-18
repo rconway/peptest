@@ -10,6 +10,19 @@ Authorization: Bearer 200
 
 ###
 
+# AUTHORIZED POST
+# - PEP passes the request, returning 200 to nginx
+# - nginx passes the original request to the Resource Server (ADES)
+# Notes:
+# - this uses a POST request
+# - the method is passed to the PEP in the 'X-Original-Method' header
+# - the request is proxied as a POST to the ADES
+POST /ades HTTP/1.1
+Host: localhost
+Authorization: Bearer 200
+
+###
+
 # UNAUTHORIZED
 # - PEP returns 401 + Www-Authenticate header with ticket
 # - nginx returns 401 + Www-Authenticate header to client
