@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/rconway/goutils/httputils"
 )
 
 func main() {
@@ -56,8 +55,8 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("WWW-Authenticate", "use this ticket: 123ABC")
 		w.WriteHeader(statusCode)
 		fmt.Fprintf(w, "Endpoint = Auth Handler\n")
-		dumpRequest(w, r)
-		dumpRequest(os.Stdout, r)
+		httputils.DumpRequest(w, r)
+		httputils.DumpRequest(os.Stdout, r)
 	}()
 
 	// Get the Authorization header
@@ -97,37 +96,6 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 // Handler for the 'protected' resource
 func resourceHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Endpoint = Resource Server\n")
-	dumpRequest(w, r)
-	dumpRequest(os.Stdout, r)
-}
-
-// Helper function to dump the received request to stdout
-func dumpRequest(w io.Writer, r *http.Request) {
-	// Host
-	fmt.Fprintln(w, "Host:", r.Host)
-	// URL
-	fmt.Fprintln(w, "URL:", r.URL)
-	// Method
-	fmt.Fprintln(w, "Method:", r.Method)
-	// Headers
-	fmt.Fprintln(w, "Headers:")
-	for headerKey, headerVal := range r.Header {
-		fmt.Fprintf(w, "  %v: %v\n", headerKey, headerVal)
-	}
-	// Query params...
-	fmt.Fprintln(w, "Params:")
-	for paramKey, paramVal := range r.URL.Query() {
-		fmt.Fprint(w, "  ", paramKey, ":")
-		for _, paramValItem := range paramVal {
-			fmt.Fprint(w, " ", paramValItem)
-		}
-		fmt.Fprintln(w)
-	}
-	// Body
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Println("ERROR reading request body:", err)
-	} else {
-		fmt.Fprintln(w, "Body:", string(data))
-	}
+	httputils.DumpRequest(w, r)
+	httputils.DumpRequest(os.Stdout, r)
 }
