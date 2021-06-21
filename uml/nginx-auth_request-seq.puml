@@ -31,9 +31,9 @@ nginx -> pep : auth_request\n(Bearer, X-Original-Uri, X-Original-Method)
 pep -> pep : makes checks
 
 alt AUTHORIZED
-  nginx <-- pep : decision : 200
-  nginx -> ades : request resource (Bearer)
-  note left: PEP has not modified the ongoing requests\ni.e. to pass a PEP-generated JWT
+  nginx <-- pep : decision : 200, X-User-JWT
+  nginx -> ades : request resource (X-User-JWT)
+  note left: PEP returns X-User-JWT header for the ADES\nNginx is configured to extract and pass-on\nthe X-User-JWT header
   client <-- ades : requested resource
 end
 
