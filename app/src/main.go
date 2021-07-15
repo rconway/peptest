@@ -98,5 +98,8 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 func resourceHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Endpoint = Resource Server\n")
 	httputils.DumpRequest(w, r)
-	httputils.DumpRequest(os.Stdout, r)
+	// Output to stdout - but suppress output for k8s liveness probes
+	if !strings.HasPrefix(r.Header.Get("User-Agent"), "kube-probe/") {
+		httputils.DumpRequest(os.Stdout, r)
+	}
 }
