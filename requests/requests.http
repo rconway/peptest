@@ -7,6 +7,7 @@
 GET /ades HTTP/1.1
 Host: localhost
 Authorization: Bearer 200
+X-User-ID: user-id-token set by client
 
 ###
 
@@ -20,6 +21,7 @@ Authorization: Bearer 200
 POST /ades HTTP/1.1
 Host: localhost
 Authorization: Bearer 200
+X-User-ID: user-id-token set by client
 
 ###
 
@@ -29,6 +31,7 @@ Authorization: Bearer 200
 GET /ades HTTP/1.1
 Host: localhost
 Authorization: Bearer 401
+X-User-ID: user-id-token set by client
 
 ###
 
@@ -38,6 +41,7 @@ Authorization: Bearer 401
 GET /ades HTTP/1.1
 Host: localhost
 Authorization: Bearer 403
+X-User-ID: user-id-token set by client
 
 ###
 
@@ -48,5 +52,6 @@ Authorization: Bearer 403
 GET /ades HTTP/1.1
 Host: localhost
 Authorization: Bearer 402
+X-User-ID: user-id-token set by client
 
 ###

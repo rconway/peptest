@@ -90,7 +90,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// All checks pass - use the provided status code
-	w.Header().Set("X-User-JWT", "JWT for resource server")
+	w.Header().Set("X-PEP-Special-Header", "If needed, extra header(s) set by PEP")
 	statusCode = requestedCode
 }
 
